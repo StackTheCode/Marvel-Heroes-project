@@ -1,9 +1,9 @@
 import './randomChar.scss';
-import useMarvelService from '../../services/MarvelService';
+import useMarvelService from '../../services/useMarvelService';
 import mjolnir from '../../resources/img/mjolnir.png';
 import { useState, useEffect } from 'react';
-import Spinner from '../spinner/spinner';
-import ErrorMesage from '../errorMessage/ErrorMessage';
+import Spinner from '../spinner/Spinner';
+import ErrorMesage from '../errorMessage/UserErrorMessage';
 
 const RandomChar = () => {
 

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-import useMarvelService from '../../services/MarvelService';
-import Spinner from '../spinner/spinner'
-import ErrorMessage from '../errorMessage/ErrorMessage';
+import useMarvelService from '../../services/useMarvelService';
+import Spinner from '../spinner/Spinner'
+import UserErrorMessage from '../errorMessage/UserErrorMessage';
 import Skeleton from '../skeleton/Skeleton';
 
 import './charInfo.scss';
+import { Link } from 'react-router-dom';
 
 const CharInfo = (props) => {
 
@@ -39,7 +40,7 @@ const CharInfo = (props) => {
 
 
     const skeleton = char || loading || error ? null : <Skeleton/>;
-    const errorMessage = error ? <ErrorMessage/> : null;
+    const errorMessage = error ? <UserErrorMessage/> : null;
     const spinner = loading ? <Spinner/> : null;
     const content = !(loading || error || !char) ? <View char={char}/> : null;
 
@@ -88,9 +89,9 @@ const View = ({char}) => {
                         // eslint-disable-next-line
                         if (i > 9) return;
                         return (
-                            <li key={i} className="char__comics-item">
+                            <Link to={`/comics/${item.resourceURI.substring(43)}`} key={i} className="char__comics-item">
                                 {item.name}
-                            </li>
+                            </Link>
                         )
                     })
                 }                

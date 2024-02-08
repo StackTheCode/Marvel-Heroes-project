@@ -1,94 +1,49 @@
 import './charList.scss';
-import useMarvelService from '../../services/MarvelService';
-import Spinner from '../spinner/spinner';
-import ErrorMesage from '../errorMessage/ErrorMessage';
+import useMarvelService from '../../services/useMarvelService';
+import Spinner from '../spinner/Spinner';
+import ErrorMessage from '../errorMessage/UserErrorMessage';
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
-
+import { CSSTransition , TransitionGroup} from 'react-transition-group';
 const CharList = (props) => {
 
-    const [charlist, setCharlist] = useState([]);
-    const [loadNewItem, setNewItem] = useState(false);
+    const [charList, setCharList] = useState([]);
+    const [newItemLoading, setnewItemLoading] = useState(false);
     const [offset, setOffset] = useState(210);
-    const [charEnded, setCharended] = useState(false)
+    const [charEnded, setCharEnded] = useState(false);
 
-
-
-     const {loading,error ,getAllCharacters} = useMarvelService();
+    const { loading, error, getAllCharacters } = useMarvelService();
 
     useEffect(() => {
         onRequest(offset, true);
-        // addOnScroll();
-        // window.addEventListener('scroll', addOnScroll);
-
-        // return ()=>{
-        //     window.removeEventListener('scroll', addOnScroll);
-        // }
     }, [])
 
- 
-
-
     const onRequest = (offset, initial) => {
-
-        initial ? setNewItem(false) :setNewItem(true)
-
-
-            getAllCharacters(offset)
+        initial ? setnewItemLoading(false) : setnewItemLoading(true);
+        getAllCharacters(offset)
             .then(onCharListLoaded)
-
     }
 
-    
-
-    const onCharListLoaded = (newCharlist) => {
-        let ended = false
-        if (newCharlist.length < 8) {
+    const onCharListLoaded = async (newCharList) => {
+        let ended = false;
+        if (newCharList.length < 9) {
             ended = true;
         }
-
-
-        setCharlist((charList) => [...charlist, ...newCharlist])
-
-        setNewItem(loadNewItem => false)
-        setOffset(offset => offset + 9)
-        setCharended(charEnded => ended)
+        setCharList([...charList, ...newCharList]);
+        setnewItemLoading(false);
+        setOffset(offset + 9);
+        setCharEnded(ended);
     }
 
+    const itemRefs = useRef([]);
 
-
-    // const addOnScroll = () => {
-
-    //     const currentHeight = window.scrollY,
-    //         windowHeight = window.innerHeight,
-    //         documentHeight = document.body.scrollHeight;
-    //     if (currentHeight + windowHeight >= documentHeight) {
-    //         onCharListLoading();
-    //         onRequest(setOffset(offset))
-    //     }
-
-    // }
-
-
-
-    const itemsRefs = useRef([]);
-
-
-   const  focusOnSelectedItem = (id) => {
-        itemsRefs.current.forEach(item => item.classList.remove('char__item_selected'));
-        itemsRefs.current[id].classList.add('char__item_selected');
-        itemsRefs.current[id].focus();
+    const focusOnItem = (id) => {
+        itemRefs.current.forEach(item => item.classList.remove('char__item_selected'));
+        itemRefs.current[id].classList.add('char__item_selected');
+        itemRefs.current[id].focus();
     }
 
-
-
-
-
-
-
-
-
-   function renderItems(arr) {
+    function renderItems(arr) {
         const items = arr.map((item, i) => {
             let imgStyle = { 'objectFit': 'cover' };
             if (item.thumbnail === 'http://i.annihil.us/u/prod/marvel/i/mg/b/40/image_not_available.jpg') {
@@ -96,50 +51,59 @@ const CharList = (props) => {
             }
 
             return (
-                <li tabIndex={0}
-                    ref={el => itemsRefs.current[i] = el}
-                    className="char__item"
-                    key={item.id}
-                    onClick={() => {
-                        props.onCharSelected(item.id);
-                        focusOnSelectedItem(i);
-                    }
-                    }
-                >
-                    <img src={item.thumbnail} alt={item.name} style={imgStyle} />
-                    <div className="char__name">{item.name}</div>
-                </li>
+                <CSSTransition key={item.id} timeout={500} classNames="char__item">
+                    <li
+                        className="char__item"
+                        tabIndex={0}
+                        ref={el => itemRefs.current[i] = el}
+                        onClick={() => {
+                            props.onCharSelected(item.id);
+                            focusOnItem(i);
+                        }}
+                        onKeyPress={(e) => {
+                            if (e.key === ' ' || e.key === "Enter") {
+                                props.onCharSelected(item.id);
+                                focusOnItem(i);
+                            }
+                        }}>
+                        <img src={item.thumbnail} alt={item.name} style={imgStyle} />
+                        <div className="char__name">{item.name}</div>
+                    </li>
+                </CSSTransition>
             )
         });
-        // А эта конструкция вынесена для центровки спиннера/ошибки
+
         return (
             <ul className="char__grid">
-                {items}
+                <TransitionGroup component={null}>
+                      {items}
+                </TransitionGroup>
+
             </ul>
         )
     }
 
-   
-      
-        const items = renderItems(charlist);
-        const errorMessage = error ? <ErrorMesage /> : null;
-        const spinner = loading && !loadNewItem ? <Spinner /> : null;
-        
+    const items = renderItems(charList);
 
-        return (
-            <div className="char__list " >
-                {errorMessage}
-                {spinner}
-        {items}
-                <button
-                    className="button button__main button__long"
-                    disabled={loadNewItem} style={{ display: charEnded ? 'none' : 'block' }} onClick={() => onRequest(offset)}>
+    const errorMessage = error ? <ErrorMessage /> : null;
+    const spinner = loading && !newItemLoading ? <Spinner /> : null;
 
-                    <div className="inner">load more</div>
-                </button>
-            </div>
-        )
-    }
+    return (
+        <div className="char__list">
+            {errorMessage}
+            {spinner}
+            {items}
+            <button
+                disabled={newItemLoading}
+                style={{ 'display': charEnded ? 'none' : 'block' }}
+                className="button button__main button__long"
+                onClick={() => onRequest(offset)}>
+                <div className="inner">load more</div>
+            </button>
+        </div>
+    )
+}
+
 
 
 export default CharList;
